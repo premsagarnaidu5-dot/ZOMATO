@@ -9,7 +9,7 @@ st.title("Zomato Restaurant Analysis")
 # --- Load Data ---
 @st.cache_data
 def load_data():
-    df = pd.read_csv("../Datasets/zomato.csv")
+    df = pd.read_csv("Zomato_Live.csv")
 
     # Drop unnecessary columns
     df = df.drop([
