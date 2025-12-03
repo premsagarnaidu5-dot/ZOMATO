@@ -1,60 +1,42 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import seaborn as sb
 import matplotlib.pyplot as plt
+import seaborn as sb
 
-st.title("Zomato Restaurant Analysis")
+st.title("Zomato Restaurant Cost Analysis")
 
-# --- Load Data ---
-@st.cache_data
-def load_data():
-    df = pd.read_csv("Zomato_Live.csv")
+# Load data
+df = pd.read_csv("../Datasets/zomato.csv")
 
-    # Drop unnecessary columns
-    df = df.drop([
-        'url','online_order','book_table','phone','rest_type','dish_liked',
-        'reviews_list','menu_item','listed_in(type)','listed_in(city)','address'
-    ], axis=1)
+# Show unique locations
+st.write("### Available Locations:")
+st.write(df.location.unique())
 
-    # Rename & clean cost column
-    df = df.rename(columns={'approx_cost(for two people)': 'approx_cost'})
-    df = df.fillna(0)
-    df['approx_cost'] = df['approx_cost'].replace('[,]', '', regex=True).astype("int64")
+# Streamlit input instead of console input()
+l = st.text_input("Enter Location Name:")
 
-    # Clean rate column
-    df['rate'] = df['rate'].replace('[/5]', '', regex=True)
-    df['rate'] = df['rate'].replace('NEW', 0)
-    df['rate'] = df['rate'].replace('-', 0).astype("float64")
+if l:
+    # Filter by location
+    lo = df[df.location == l]
 
-    return df
+    # Check if location exists
+    if lo.empty:
+        st.error("No restaurants found for this location.")
+    else:
+        # Group and find top 10 restaurants by rating
+        gr = lo.groupby('name')[['rate','approx_cost']].mean().nlargest(10, 'rate').reset_index()
 
-df = load_data()
+        # Plot
+        fig = plt.figure(figsize=(20, 8))
+        sb.barplot(x=gr.name, y=gr.approx_cost, palette='summer')
+        plt.xticks(rotation=90)
+        plt.xlabel("Restaurant Name")
+        plt.ylabel("Average Cost for Two")
+        plt.title(f"Top 10 Restaurants in {l} by Rating")
 
-# --- Sidebar Selection ---
-st.sidebar.header("Select Options")
+        st.pyplot(fig)
 
-locations = sorted(df['location'].unique())
-selected_location = st.sidebar.selectbox("Choose Location", locations)
-
-# Filter by location
-lo = df[df['location'] == selected_location]
-
-# --- Grouping and selecting top 10 ---
-gr = lo.groupby('name')[['rate', 'approx_cost']].mean().nlargest(10, 'rate').reset_index()
-
-st.subheader(f"Top 10 Restaurants in {selected_location} by Rating")
-
-# --- Plotting ---
-fig, ax = plt.subplots(figsize=(20, 8))
-sb.barplot(data=gr, x='name', y='approx_cost', palette='summer', ax=ax)
-plt.xticks(rotation=90)
-plt.xlabel("Restaurant Name")
-plt.ylabel("Average Cost for Two")
-plt.tight_layout()
-
-st.pyplot(fig)
-
-# Show data table
-st.subheader("Data Table for Selected Restaurants")
-st.dataframe(gr)
+        # Show table
+        st.write("### Data Table")
+        st.dataframe(gr)
