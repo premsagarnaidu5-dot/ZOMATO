@@ -7,7 +7,7 @@ import seaborn as sb
 st.title("Zomato Restaurant Cost Analysis")
 
 # Load data
-df = pd.read_csv("../Datasets/zomato.csv")
+df = pd.read_csv("Zomato_Live.csv")
 
 # Show unique locations
 st.write("### Available Locations:")
